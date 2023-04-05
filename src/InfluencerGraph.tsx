@@ -46,6 +46,12 @@ function InfluencerGraph() {
           style: {
             'curve-style': 'bezier',
             'target-arrow-shape': 'triangle',
+            label: 'data(Count)',
+            'text-background-color': 'black',
+            'text-background-shape': 'rectangle',
+            'text-border-color': 'red',
+            'text-border-opacity': 10,
+            'control-point-step-size': 30
           },
         },
       ]}
@@ -64,7 +70,7 @@ async function NetworkToElements(cyHandler: CyHandler) {
   jsonArray.data.forEach((callEvent: any) => {
     elements.push(PersonToNode(callEvent.influencer));
     elements.push(PersonToNode(callEvent.influencee));
-    elements.push(PersonToNode(callEvent.receiver));
+    elements.push(PersonToNode(callEvent.reciever));
   });
 
   jsonArray.data.forEach((callEvent: any) => {
@@ -73,7 +79,7 @@ async function NetworkToElements(cyHandler: CyHandler) {
       PeopleToEdge(
         callEvent.influencer,
         callEvent.influencee,
-        callEvent.count,
+        callEvent.Count,
         'first',
         hexColor
       )
@@ -81,8 +87,8 @@ async function NetworkToElements(cyHandler: CyHandler) {
     elements.push(
       PeopleToEdge(
         callEvent.influencee,
-        callEvent.receiver,
-        callEvent.count,
+        callEvent.reciever,
+        callEvent.Count,
         'second',
         hexColor
       )
@@ -102,7 +108,7 @@ function PersonToNode(name: string) {
 function PeopleToEdge(
   nameA: string,
   nameB: string,
-  count: number,
+  Count: number,
   callType: string,
   color: string
 ) {
@@ -111,8 +117,8 @@ function PeopleToEdge(
       source: nameA,
       target: nameB,
       callType: callType,
-      count: count,
-      label: `${count}`,
+      Count: Count,
+      label: `${Count}`,
       randomColor: color,
     },
   };
@@ -121,7 +127,7 @@ function PeopleToEdge(
 async function CsvToJson() {
   let jsonArray: any;
 
-  await fetch('/network.csv')
+  await fetch('/network2.csv')
     .then((response) => response.text())
     .then((responseText) => {
       jsonArray = Papa.parse(responseText, { header: true });
