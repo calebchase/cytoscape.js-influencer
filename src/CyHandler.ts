@@ -1,4 +1,12 @@
 import cytoscape from 'cytoscape';
+import './HtmlNode.css';
+
+// move to sep file
+interface interaction {
+  influencee: number;
+  reciever: number;
+  influencer: number;
+}
 
 class CyHandler {
   cy!: cytoscape.Core;
@@ -11,7 +19,53 @@ class CyHandler {
     this.cySet = true;
   }
 
+  //   interactionCount
+  // :
+  // influencee
+  // :
+  // 2
+  // influencer
+  // :
+  // 0
+  // reciever
+  // :
+  // 0
+
+  EnableHtmlNode() {
+    // @ts-ignore
+    // registering the htmlnode does not add the extension to core...
+    this.cy.htmlnode().createHtmlNode(cytoscape, this.cy, {
+      event: {
+        query: 'node',
+        template: [
+          {
+            zoomRange: [0.0001, 100],
+            template: {
+              html: `
+                    <div id="htmlLabel:#{data.id}" class="EdgePadding">
+                      <div>
+                        #{data.id}
+                      </div>
+                      <div>
+                      Influencer: #{data.influencer}
+                      </div>
+                      <div>
+                      Influencee: #{data.influencee}
+                      </div>
+                      <div>
+                      Reciever: #{data.reciever}
+                      </div>
+                    </div>`,
+            },
+          },
+        ],
+      },
+    });
+  }
+
   AddAndStyle(elements: any) {
+    if (this.cy === undefined) return;
+
     this.cy.add(elements);
     this.cy.remove('#dummyNode');
 
@@ -27,10 +81,29 @@ class CyHandler {
     });
   }
 
+  AddCountData(interactionCount: Map<string, interaction>) {
+    if (this.cy === undefined) return;
+
+    this.cy.nodes().forEach((node) => {
+      node.data('influencer', interactionCount.get(node.id())?.influencer);
+      node.data('influencee', interactionCount.get(node.id())?.influencee);
+      node.data('reciever', interactionCount.get(node.id())?.reciever);
+      console.log(node.data());
+    });
+  }
+
   RunLayout() {
     if (!this.cySet) return;
-    // @ts-ignore
-    this.cy.layout({ name: 'fcose', idealEdgeLength: edge => 125, nodeRepulsion: node => 9000 }).run();
+
+    this.cy
+      .layout({
+        name: 'fcose',
+        // not sure why ts complains as the following functions fine
+        // @ts-ignore
+        idealEdgeLength: (edge: any) => 200,
+        nodeRepulsion: (node: any) => 90000,
+      })
+      .run();
   }
 }
 

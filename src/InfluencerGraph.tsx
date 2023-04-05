@@ -5,7 +5,14 @@ import fcose from 'cytoscape-fcose';
 import cytoscape from 'cytoscape';
 import CyHandler from './CyHandler';
 import Papa from 'papaparse';
-import { json } from 'stream/consumers';
+import { register as htmlnode } from 'cytoscape-html-node';
+
+// move to sep file
+interface interaction {
+  influencee: number;
+  reciever: number;
+  influencer: number;
+}
 
 function InfluencerGraph() {
   const [jsonArray, setJsonArray] = useState([]);
@@ -16,12 +23,16 @@ function InfluencerGraph() {
   let added = false;
 
   cytoscape.use(fcose);
+  cytoscape.use(htmlnode);
 
   useEffect(() => {
-    NetworkToElements(cyHandler).then((elements) => {
+    NetworkToElements(cyHandler).then(([elements, interactionCount]) => {
+      console.log(interactionCount);
       if (added) return;
       added = true;
       cyHandler.AddAndStyle(elements);
+      cyHandler.EnableHtmlNode();
+      cyHandler.AddCountData(interactionCount);
       cyHandler.RunLayout();
     });
   }, []);
@@ -33,12 +44,10 @@ function InfluencerGraph() {
         {
           selector: 'node',
           style: {
-            label: 'data(id)',
-            width: 50,
-            height: 20,
             shape: 'round-rectangle',
             'text-halign': 'center',
             'text-valign': 'center',
+            'background-color': 'lightgrey',
           },
         },
         {
@@ -51,7 +60,7 @@ function InfluencerGraph() {
             'text-background-shape': 'rectangle',
             'text-border-color': 'red',
             'text-border-opacity': 10,
-            'control-point-step-size': 30
+            'control-point-step-size': 30,
           },
         },
       ]}
@@ -64,13 +73,34 @@ function InfluencerGraph() {
 
 async function NetworkToElements(cyHandler: CyHandler) {
   let jsonArray = await CsvToJson();
-  console.log(jsonArray);
   let elements: any = [];
+  let interactionCount = new Map<string, interaction>();
 
   jsonArray.data.forEach((callEvent: any) => {
-    elements.push(PersonToNode(callEvent.influencer));
-    elements.push(PersonToNode(callEvent.influencee));
-    elements.push(PersonToNode(callEvent.reciever));
+    elements.push(
+      PersonToNode(
+        callEvent.influencer,
+        callEvent.Count,
+        'influencer',
+        interactionCount
+      )
+    );
+    elements.push(
+      PersonToNode(
+        callEvent.influencee,
+        callEvent.Count,
+        'influencee',
+        interactionCount
+      )
+    );
+    elements.push(
+      PersonToNode(
+        callEvent.reciever,
+        callEvent.Count,
+        'reciever',
+        interactionCount
+      )
+    );
   });
 
   jsonArray.data.forEach((callEvent: any) => {
@@ -95,10 +125,34 @@ async function NetworkToElements(cyHandler: CyHandler) {
     );
   });
 
-  return elements;
+  return [elements, interactionCount];
 }
 
-function PersonToNode(name: string) {
+function AddCount(
+  name: string,
+  count: number,
+  interactionType: keyof interaction,
+  interactionCount: Map<string, interaction>
+) {
+  if (!interactionCount.has(name)) {
+    interactionCount.set(name, {
+      influencee: 0,
+      influencer: 0,
+      reciever: 0,
+    });
+  }
+
+  interactionCount.get(name)![interactionType] += Number(count);
+}
+
+function PersonToNode(
+  name: string,
+  count: number,
+  interactionType: keyof interaction,
+  interactionCount: Map<string, interaction>
+) {
+  AddCount(name, count, interactionType, interactionCount);
+
   return {
     data: { id: name, label: name },
     position: { x: 10 * Math.random(), y: 10 * Math.random() },
