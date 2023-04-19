@@ -181,8 +181,10 @@ class CyHandler {
         name: 'fcose',
         // not sure why ts complains as the following functions fine
         // @ts-ignore
-        idealEdgeLength: 80,
-        nodeRepulsion: (node: any) => 100000,
+        idealEdgeLength: 70,
+        nodeRepulsion: (node: any) =>
+          node.data('htmlNodeType') == 'person' ? 900000 : 10000,
+        edgeElasticity: () => 0.4,
         randomize: !reRun,
         animationDuration: 300,
         fit: !reRun,

@@ -15,6 +15,8 @@ interface interaction {
   influencer: number;
 }
 
+let addCount = 0;
+
 function InfluencerGraph() {
   const [jsonArray, setJsonArray] = useState([]);
   const elements = [{ data: { id: 'dummyNode' } }];
@@ -159,7 +161,7 @@ function CallInteractions(
   type: string,
   elements: any[]
 ) {
-  let callIdentifier = `${nameA}-${nameB}`;
+  let callIdentifier = `${nameA}-${nameB}_${addCount++}`;
 
   let callInteraction = {
     data: {
@@ -171,6 +173,10 @@ function CallInteractions(
       callCountB: countB,
       totalCount: totalCount,
       htmlNodeType: 'callEvents',
+    },
+    style: {
+      'border-color': color,
+      'border-style': type == 'first' ? 'dashed' : 'solid',
     },
   };
 
