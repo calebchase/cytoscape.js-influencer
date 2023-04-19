@@ -6,6 +6,7 @@ import cytoscape from 'cytoscape';
 import CyHandler from './CyHandler';
 import Papa from 'papaparse';
 import { register as htmlnode } from 'cytoscape-html-node';
+import { count } from 'console';
 
 // move to sep file
 interface interaction {
@@ -34,6 +35,7 @@ function InfluencerGraph() {
       cyHandler.EnableHtmlNode();
       cyHandler.AddCountData(interactionCount);
       cyHandler.RunLayout();
+      cyHandler.InitOnTap();
     });
   }, []);
 
@@ -47,7 +49,9 @@ function InfluencerGraph() {
             shape: 'round-rectangle',
             'text-halign': 'center',
             'text-valign': 'center',
-            'background-color': 'lightgrey',
+            'background-color': 'white',
+            'border-width': 2,
+            'border-color': 'darkgrey',
           },
         },
         {
@@ -55,11 +59,6 @@ function InfluencerGraph() {
           style: {
             'curve-style': 'bezier',
             'target-arrow-shape': 'triangle',
-            label: 'data(Count)',
-            'text-background-color': 'black',
-            'text-background-shape': 'rectangle',
-            'text-border-color': 'red',
-            'text-border-opacity': 10,
             'control-point-step-size': 30,
           },
         },
@@ -104,24 +103,29 @@ async function NetworkToElements(cyHandler: CyHandler) {
   });
 
   jsonArray.data.forEach((callEvent: any) => {
+    let [countA, countB] = SplitNumber(callEvent.Count);
+
     let hexColor = RandomHexColor();
-    elements.push(
-      PeopleToEdge(
-        callEvent.influencer,
-        callEvent.influencee,
-        callEvent.Count,
-        'first',
-        hexColor
-      )
+    CallInteractions(
+      callEvent.influencer,
+      callEvent.influencee,
+      callEvent.Count,
+      countA,
+      countB,
+      hexColor,
+      'first',
+      elements
     );
-    elements.push(
-      PeopleToEdge(
-        callEvent.influencee,
-        callEvent.reciever,
-        callEvent.Count,
-        'second',
-        hexColor
-      )
+
+    CallInteractions(
+      callEvent.influencee,
+      callEvent.reciever,
+      callEvent.Count,
+      countA,
+      countB,
+      hexColor,
+      'second',
+      elements
     );
   });
 
@@ -145,6 +149,55 @@ function AddCount(
   interactionCount.get(name)![interactionType] += Number(count);
 }
 
+function CallInteractions(
+  nameA: string,
+  nameB: string,
+  totalCount: number,
+  countA: number,
+  countB: number,
+  color: string,
+  type: string,
+  elements: any[]
+) {
+  let callIdentifier = `${nameA}-${nameB}`;
+
+  let callInteraction = {
+    data: {
+      id: callIdentifier,
+      label: callIdentifier,
+      nameA: nameA,
+      nameB: nameB,
+      callCountA: countA,
+      callCountB: countB,
+      totalCount: totalCount,
+      htmlNodeType: 'callEvents',
+    },
+  };
+
+  let edgeA = {
+    data: {
+      source: nameA,
+      target: callIdentifier,
+      randomColor: color,
+      callType: type,
+      Count: totalCount,
+    },
+  };
+  let edgeB = {
+    data: {
+      source: callIdentifier,
+      target: nameB,
+      randomColor: color,
+      callType: type,
+      Count: totalCount,
+    },
+  };
+
+  elements.push(callInteraction);
+  elements.push(edgeA);
+  elements.push(edgeB);
+}
+
 function PersonToNode(
   name: string,
   count: number,
@@ -154,8 +207,7 @@ function PersonToNode(
   AddCount(name, count, interactionType, interactionCount);
 
   return {
-    data: { id: name, label: name },
-    position: { x: 10 * Math.random(), y: 10 * Math.random() },
+    data: { id: name, label: name, htmlNodeType: 'person' },
   };
 }
 
@@ -200,11 +252,16 @@ function rgbToHex(r: number, g: number, b: number) {
 }
 
 function RandomHexColor() {
-  return rgbToHex(
-    Math.random() * 256,
-    Math.random() * 256,
-    Math.random() * 256
-  );
+  return rgbToHex(RandomHexWithMin(), RandomHexWithMin(), RandomHexWithMin());
+}
+
+function RandomHexWithMin() {
+  return Math.min(Math.random() * 256, 200);
+}
+
+function SplitNumber(n: number) {
+  let part = Math.floor(Math.random() * (n - 1)) + 1;
+  return [part, n - part];
 }
 
 export default InfluencerGraph;
