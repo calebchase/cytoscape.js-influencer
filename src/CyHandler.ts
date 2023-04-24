@@ -1,5 +1,6 @@
 import cytoscape from 'cytoscape';
 import './HtmlNode.css';
+import { constants } from 'buffer';
 
 // move to sep file
 interface interaction {
@@ -97,7 +98,7 @@ class CyHandler {
 
                     <div class="flex-column">
                       <div class="flex-child bold">
-                        Name
+					  						Caller
                       </div>
                       <div class="flex-child"">
                         #{data.nameA}
@@ -109,7 +110,7 @@ class CyHandler {
 
                     <div class="flex-column">
                       <div class="flex-child bold">
-                       Caller
+												Count
                       </div>
                       <div class="flex-child"">
                         #{data.callCountA}
@@ -170,6 +171,52 @@ class CyHandler {
 
       this.cy.add(this.cy.remove(event.target));
       this.RunLayout(true);
+    });
+  }
+
+  InitOnMouseOver() {
+    this.cy.on('mouseover', (event) => {
+      let persons = event.target.data('persons');
+      if (persons == undefined) return;
+
+      persons.forEach((person: any) => {
+        this.cy.nodes(`#${person}`).style('border-color', 'red');
+      });
+
+      this.cy
+        .elements(`node[interactionID = ${event.target.data('interactionID')}]`)
+        .forEach((node) => {
+          node.style('border-color', 'red');
+        });
+
+      this.cy
+        .elements(`edge[interactionID = ${event.target.data('interactionID')}]`)
+        .forEach((edge) => {
+          edge.style('line-color', 'red');
+          edge.style('target-arrow-color', 'red');
+        });
+    });
+
+    this.cy.on('mouseout', (event) => {
+      let persons = event.target.data('persons');
+      if (persons == undefined) return;
+
+      persons.forEach((person: any) => {
+        this.cy.nodes(`#${person}`).style('border-color', 'darkgrey');
+      });
+
+      this.cy
+        .elements(`node[interactionID = ${event.target.data('interactionID')}]`)
+        .forEach((node) => {
+          node.style('border-color', node.data('randomColor'));
+        });
+
+      this.cy
+        .elements(`edge[interactionID = ${event.target.data('interactionID')}]`)
+        .forEach((edge) => {
+          edge.style('line-color', edge.data('randomColor'));
+          edge.style('target-arrow-color', edge.data('randomColor'));
+        });
     });
   }
 

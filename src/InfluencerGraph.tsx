@@ -16,6 +16,7 @@ interface interaction {
 }
 
 let addCount = 0;
+let interactionID = 0;
 
 function InfluencerGraph() {
   const [jsonArray, setJsonArray] = useState([]);
@@ -30,7 +31,6 @@ function InfluencerGraph() {
 
   useEffect(() => {
     NetworkToElements(cyHandler).then(([elements, interactionCount]) => {
-      console.log(interactionCount);
       if (added) return;
       added = true;
       cyHandler.AddAndStyle(elements);
@@ -38,6 +38,7 @@ function InfluencerGraph() {
       cyHandler.AddCountData(interactionCount);
       cyHandler.RunLayout();
       cyHandler.InitOnTap();
+      cyHandler.InitOnMouseOver();
     });
   }, []);
 
@@ -111,6 +112,7 @@ async function NetworkToElements(cyHandler: CyHandler) {
     CallInteractions(
       callEvent.influencer,
       callEvent.influencee,
+      callEvent.reciever,
       callEvent.Count,
       countA,
       countB,
@@ -122,6 +124,7 @@ async function NetworkToElements(cyHandler: CyHandler) {
     CallInteractions(
       callEvent.influencee,
       callEvent.reciever,
+      callEvent.influencer,
       callEvent.Count,
       countA,
       countB,
@@ -129,6 +132,7 @@ async function NetworkToElements(cyHandler: CyHandler) {
       'second',
       elements
     );
+    interactionID++;
   });
 
   return [elements, interactionCount];
@@ -154,6 +158,7 @@ function AddCount(
 function CallInteractions(
   nameA: string,
   nameB: string,
+  otherName: string,
   totalCount: number,
   countA: number,
   countB: number,
@@ -169,10 +174,13 @@ function CallInteractions(
       label: callIdentifier,
       nameA: nameA,
       nameB: nameB,
+      persons: [nameA, nameB, otherName],
       callCountA: countA,
       callCountB: countB,
       totalCount: totalCount,
       htmlNodeType: 'callEvents',
+      interactionID: interactionID,
+      randomColor: color,
     },
     style: {
       'border-color': color,
@@ -187,6 +195,8 @@ function CallInteractions(
       randomColor: color,
       callType: type,
       Count: totalCount,
+      persons: [nameA, nameB, otherName],
+      interactionID: interactionID,
     },
   };
   let edgeB = {
@@ -196,6 +206,8 @@ function CallInteractions(
       randomColor: color,
       callType: type,
       Count: totalCount,
+      persons: [nameA, nameB, otherName],
+      interactionID: interactionID,
     },
   };
 
@@ -213,7 +225,11 @@ function PersonToNode(
   AddCount(name, count, interactionType, interactionCount);
 
   return {
-    data: { id: name, label: name, htmlNodeType: 'person' },
+    data: {
+      id: name,
+      label: name,
+      htmlNodeType: 'person',
+    },
   };
 }
 
